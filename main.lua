@@ -1,8 +1,8 @@
--- Modernes Fly & Noclip Script für Roblox
+-- Modernes Fly & Noclip Script mit zuverlässiger GUI
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
+local StarterGui = game:GetService("StarterGui")
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
@@ -15,6 +15,7 @@ local noclip = false
 local flyConnection = nil
 local bodyVelocity = nil
 local bodyGyro = nil
+local noclipConnection = nil
 
 -- Flugsteuerung
 local flyControls = {
@@ -29,8 +30,8 @@ local flyControls = {
 -- GUI Erstellung
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.Name = "FlyNoclipGUI_" .. math.random(1000, 9999) -- Einzigartiger Name
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Name = "FlyNoclipGUI"
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
@@ -40,17 +41,20 @@ MainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
 MainFrame.Size = UDim2.new(0, 400, 0, 300)
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.BackgroundTransparency = 0.1
+
+-- Abgerundete Ecken
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 15)
 corner.Parent = MainFrame
 
+-- Titelbereich
 local TitleBar = Instance.new("Frame")
 TitleBar.Parent = MainFrame
 TitleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
 TitleBar.BorderSizePixel = 0
 TitleBar.Position = UDim2.new(0, 0, 0, 0)
 TitleBar.Size = UDim2.new(1, 0, 0, 40)
+
 local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 15)
 titleCorner.Parent = TitleBar
@@ -68,6 +72,7 @@ Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Schließen-Button
 local CloseButton = Instance.new("TextButton")
 CloseButton.Parent = TitleBar
 CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
@@ -79,10 +84,12 @@ CloseButton.Font = Enum.Font.GothamBold
 CloseButton.Text = "✕"
 CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseButton.TextSize = 16
+
 local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 8)
 closeCorner.Parent = CloseButton
 
+-- Fly-Button
 local FlyButton = Instance.new("TextButton")
 FlyButton.Parent = MainFrame
 FlyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
@@ -93,10 +100,12 @@ FlyButton.Font = Enum.Font.Gotham
 FlyButton.Text = "Fliegen: AUS"
 FlyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 FlyButton.TextSize = 16
+
 local flyCorner = Instance.new("UICorner")
 flyCorner.CornerRadius = UDim.new(0, 10)
 flyCorner.Parent = FlyButton
 
+-- Noclip-Button
 local NoclipButton = Instance.new("TextButton")
 NoclipButton.Parent = MainFrame
 NoclipButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
@@ -107,10 +116,12 @@ NoclipButton.Font = Enum.Font.Gotham
 NoclipButton.Text = "Noclip: AUS"
 NoclipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 NoclipButton.TextSize = 16
+
 local noclipCorner = Instance.new("UICorner")
 noclipCorner.CornerRadius = UDim.new(0, 10)
 noclipCorner.Parent = NoclipButton
 
+-- Geschwindigkeits-Label
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Parent = MainFrame
 SpeedLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
@@ -121,30 +132,36 @@ SpeedLabel.Font = Enum.Font.Gotham
 SpeedLabel.Text = "Geschwindigkeit: 50"
 SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedLabel.TextSize = 14
+
 local speedCorner = Instance.new("UICorner")
 speedCorner.CornerRadius = UDim.new(0, 10)
 speedCorner.Parent = SpeedLabel
 
+-- Geschwindigkeits-Slider
 local SpeedSlider = Instance.new("Frame")
 SpeedSlider.Parent = MainFrame
 SpeedSlider.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
 SpeedSlider.BorderSizePixel = 0
 SpeedSlider.Position = UDim2.new(0, 210, 0, 130)
 SpeedSlider.Size = UDim2.new(0, 170, 0, 40)
+
 local sliderCorner = Instance.new("UICorner")
 sliderCorner.CornerRadius = UDim.new(0, 10)
 sliderCorner.Parent = SpeedSlider
 
+-- Slider-Füllung
 local SliderFill = Instance.new("Frame")
 SliderFill.Parent = SpeedSlider
 SliderFill.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
 SliderFill.BorderSizePixel = 0
 SliderFill.Position = UDim2.new(0, 0, 0, 0)
 SliderFill.Size = UDim2.new(0.3, 0, 1, 0)
+
 local fillCorner = Instance.new("UICorner")
 fillCorner.CornerRadius = UDim.new(0, 10)
 fillCorner.Parent = SliderFill
 
+-- Slider-Button
 local SliderButton = Instance.new("TextButton")
 SliderButton.Parent = SpeedSlider
 SliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -152,10 +169,12 @@ SliderButton.BorderSizePixel = 0
 SliderButton.Position = UDim2.new(0.3, -10, 0.5, -10)
 SliderButton.Size = UDim2.new(0, 20, 0, 20)
 SliderButton.Text = ""
+
 local buttonCorner = Instance.new("UICorner")
 buttonCorner.CornerRadius = UDim.new(0, 10)
 buttonCorner.Parent = SliderButton
 
+-- Anweisungen
 local Instructions = Instance.new("TextLabel")
 Instructions.Parent = MainFrame
 Instructions.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
@@ -168,39 +187,54 @@ Instructions.TextColor3 = Color3.fromRGB(200, 200, 200)
 Instructions.TextSize = 14
 Instructions.TextXAlignment = Enum.TextXAlignment.Left
 Instructions.TextYAlignment = Enum.TextYAlignment.Top
+
 local instCorner = Instance.new("UICorner")
 instCorner.CornerRadius = UDim.new(0, 10)
 instCorner.Parent = Instructions
 
--- GUI Animation und Schließen
+
+-- GUI-Animation und Schließen
 local open = true
 CloseButton.MouseButton1Click:Connect(function()
-    open = not open
     if open then
-        MainFrame:TweenSize(UDim2.new(0, 400, 0, 300), "Out", "Quad", 0.3, true)
-    else
         MainFrame:TweenSize(UDim2.new(0, 400, 0, 40), "Out", "Quad", 0.3, true)
+        open = false
+    else
+        MainFrame:TweenSize(UDim2.new(0, 400, 0, 300), "Out", "Quad", 0.3, true)
+        open = true
     end
 end)
 
 -- Geschwindigkeitsregler
 local dragging = false
-SpeedSlider.MouseButton1Down:Connect(function()
-    dragging = true
+local sliderValue = 0.3
+
+-- Funktion zur Aktualisierung der Geschwindigkeit
+local function updateSpeed()
+    flySpeed = math.floor(sliderValue * 150 + 10)
+    SpeedLabel.Text = "Geschwindigkeit: " .. flySpeed
+    
+    if flying and bodyVelocity then
+        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    end
+end
+
+-- Slider-Interaktion
+SpeedSlider.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+    end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local pos = math.clamp((input.Position.X - SpeedSlider.AbsolutePosition.X) / SpeedSlider.AbsoluteSize.X, 0, 1)
-        SliderButton.Position = UDim2.new(pos, -10, 0.5, -10)
-        SliderFill.Size = UDim2.new(pos, 0, 1, 0)
-        flySpeed = math.floor(pos * 150 + 10)
-        SpeedLabel.Text = "Geschwindigkeit: " .. flySpeed
+        local relativeX = input.Position.X - SpeedSlider.AbsolutePosition.X
+        sliderValue = math.clamp(relativeX / SpeedSlider.AbsoluteSize.X, 0, 1)
         
-        -- Geschwindigkeit während des Fluges aktualisieren
-        if flying and bodyVelocity then
-            bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        end
+        SliderButton.Position = UDim2.new(sliderValue, -10, 0.5, -10)
+        SliderFill.Size = UDim2.new(sliderValue, 0, 1, 0)
+        
+        updateSpeed()
     end
 end)
 
@@ -219,26 +253,31 @@ local function toggleNoclip()
         NoclipButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
         
         -- Noclip-Verbindung erstellen, um Kollisionen kontinuierlich zu deaktivieren
-        local noclipConnection
         noclipConnection = RunService.Stepped:Connect(function()
-            if noclip then
+            if noclip and character and character.Parent then
                 for _, part in pairs(character:GetDescendants()) do
                     if part:IsA("BasePart") then
                         part.CanCollide = false
                     end
                 end
-            else
-                noclipConnection:Disconnect()
             end
         end)
     else
         NoclipButton.Text = "Noclip: AUS"
         NoclipButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
         
+        -- Noclip-Verbindung trennen
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+        
         -- Kollisionen wiederherstellen
-        for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
+        if character and character.Parent then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
             end
         end
     end
@@ -363,9 +402,8 @@ UserInputService.InputChanged:Connect(updateFlyControls)
 UserInputService.InputEnded:Connect(updateFlyControls)
 
 -- Benachrichtigung
-local StarterGui = game:GetService("StarterGui")
 StarterGui:SetCore("ChatMakeSystemMessage", {
-    Text = "[FLY & NOCLIP] Modernes Script geladen! Verwende die Schaltflächen oder Tasten F/N";
+    Text = "[FLY & NOCLIP] Verbessertes Script geladen! Verwende die Schaltflächen oder Tasten F/N";
     Color = Color3.new(0, 1, 0);
     Font = Enum.Font.GothamBold;
     Size = 18;
